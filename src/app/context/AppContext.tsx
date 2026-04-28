@@ -37,6 +37,14 @@ interface AppContextType {
     password: string,
     role: UserRole
   ) => Promise<{ success: boolean; message: string }>;
+  requestAdminOtp: (
+    email: string,
+    password: string
+  ) => Promise<{ success: boolean; message: string }>;
+  verifyAdminOtp: (
+    email: string,
+    otp: string
+  ) => Promise<{ success: boolean; message: string }>;
   signupStudent: (data: {
     name: string;
     email: string;
@@ -175,6 +183,51 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return {
         success: false,
         message: 'Cannot reach the server. Start MySQL, run the Spring Boot backend, then retry.',
+      };
+    }
+  }, []);
+
+  const requestAdminOtp = useCallback(async (email: string, password: string) => {
+    try {
+      const res = await fetch('/api/auth/admin/request-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
+      const text = await res.text();
+      if (!res.ok) {
+        return { success: false, message: text || 'Failed to send OTP.' };
+      }
+      return { success: true, message: 'OTP sent! Check the backend console for your OTP (demo mode).' };
+    } catch {
+      return {
+        success: false,
+        message: 'Cannot reach the server. Make sure the backend is running.',
+      };
+    }
+  }, []);
+
+  const verifyAdminOtp = useCallback(async (email: string, otp: string) => {
+    try {
+      const res = await fetch('/api/auth/admin/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), otp: otp.trim() }),
+      });
+      const text = await res.text();
+      if (!res.ok) {
+        return { success: false, message: text || 'OTP verification failed.' };
+      }
+      const data = JSON.parse(text) as AuthResponse;
+      if (data.role === 'admin' && data.admin) {
+        setCurrentUser({ role: 'admin', admin: data.admin });
+        return { success: true, message: `Welcome, ${data.admin.name}!` };
+      }
+      return { success: false, message: 'Unexpected response from server.' };
+    } catch {
+      return {
+        success: false,
+        message: 'Cannot reach the server. Make sure the backend is running.',
       };
     }
   }, []);
@@ -447,6 +500,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         registrations,
         students,
         loginByEmail,
+        requestAdminOtp,
+        verifyAdminOtp,
         signupStudent,
         signupAdmin,
         logout,

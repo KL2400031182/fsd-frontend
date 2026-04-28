@@ -272,6 +272,7 @@ export function Login() {
 
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+
           {/* === FORGOT PASSWORD VIEW === */}
           {view === 'forgot' && (
             <div className="p-7">

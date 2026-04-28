@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { CheckCircle, Clock, XCircle, AlertTriangle, BookOpen, Trash2, ClipboardList } from 'lucide-react';
+import { CheckCircle, Clock, AlertTriangle, BookOpen, Trash2, ClipboardList, X, FileText, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useApp } from '../../context/AppContext';
-import { DEPT_COLORS, formatTime, coursesConflict } from '../../data/mockData';
+import { Course, DEPT_COLORS, formatTime } from '../../data/mockData';
 
 type TabType = 'all' | 'enrolled' | 'waitlisted';
 
@@ -10,6 +10,7 @@ export function MyRegistrations() {
   const { currentUser, courses, getStudentRegistrations, dropCourse, getConflictsForStudent } = useApp();
   const [tab, setTab] = useState<TabType>('all');
   const [dropping, setDropping] = useState<string | null>(null);
+  const [syllabusSlide, setSyllabusSlide] = useState<Course | null>(null);
 
   const student = currentUser?.student;
   if (!student) return null;
@@ -169,9 +170,20 @@ export function MyRegistrations() {
                     </div>
 
                     <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
-                      <span className="text-xs text-slate-400">
-                        Registered {new Date(reg.registeredAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-400">
+                          Registered {new Date(reg.registeredAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </span>
+                        {/* Syllabus button */}
+                        <button
+                          onClick={() => setSyllabusSlide(course)}
+                          className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 px-2 py-1 rounded-lg transition-colors border border-transparent hover:border-indigo-200"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          Syllabus
+                          <ChevronRight className="w-3 h-3" />
+                        </button>
+                      </div>
 
                       {dropping === course.id ? (
                         <div className="flex items-center gap-2">
@@ -206,6 +218,124 @@ export function MyRegistrations() {
           })}
         </div>
       )}
+
+      {/* ── Syllabus Slide Panel ── */}
+      {/* Backdrop */}
+      {syllabusSlide && (
+        <div
+          className="fixed inset-0 bg-black/40 z-40 transition-opacity"
+          onClick={() => setSyllabusSlide(null)}
+        />
+      )}
+
+      {/* Slide panel from right */}
+      <div
+        className={`fixed top-0 right-0 h-full w-full max-w-lg bg-white shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-in-out ${
+          syllabusSlide ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        {syllabusSlide && (() => {
+          const colors = DEPT_COLORS[syllabusSlide.department] || DEPT_COLORS['Computer Science'];
+          return (
+            <>
+              {/* Slide Header */}
+              <div className={`flex items-start justify-between p-5 border-b border-slate-100 ${colors.bg}`}>
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 rounded-xl bg-white/70 border ${colors.border}`}>
+                    <BookOpen className={`w-5 h-5 ${colors.text}`} />
+                  </div>
+                  <div>
+                    <span className={`text-xs px-2 py-0.5 rounded-full bg-white/70 ${colors.text} border ${colors.border}`} style={{ fontWeight: 600 }}>
+                      {syllabusSlide.code}
+                    </span>
+                    <h2 className="text-slate-900 text-base mt-1 leading-snug" style={{ fontWeight: 700 }}>
+                      {syllabusSlide.name}
+                    </h2>
+                    <p className="text-slate-500 text-xs mt-0.5">{syllabusSlide.instructor} · {syllabusSlide.credits} credits</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSyllabusSlide(null)}
+                  className="p-2 text-slate-400 hover:text-slate-700 hover:bg-white/70 rounded-xl transition-colors flex-shrink-0"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Slide Body */}
+              <div className="flex-1 overflow-y-auto p-5 space-y-5">
+                {/* Course meta */}
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { label: 'Department', value: syllabusSlide.department },
+                    { label: 'Semester', value: syllabusSlide.semester },
+                    { label: 'Schedule', value: `${syllabusSlide.schedule.days.join('/')} · ${formatTime(syllabusSlide.schedule.startTime)}–${formatTime(syllabusSlide.schedule.endTime)}` },
+                    { label: 'Room', value: syllabusSlide.schedule.room || '—' },
+                  ].map(({ label, value }) => (
+                    <div key={label} className="bg-slate-50 rounded-xl p-3">
+                      <p className="text-xs text-slate-400 mb-0.5">{label}</p>
+                      <p className="text-sm text-slate-800" style={{ fontWeight: 500 }}>{value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Description */}
+                {syllabusSlide.description && (
+                  <div>
+                    <h3 className="text-sm text-slate-700 mb-1.5" style={{ fontWeight: 600 }}>Course Description</h3>
+                    <p className="text-sm text-slate-600 leading-relaxed">{syllabusSlide.description}</p>
+                  </div>
+                )}
+
+                {/* Prerequisites */}
+                {syllabusSlide.prerequisites.length > 0 && (
+                  <div>
+                    <h3 className="text-sm text-slate-700 mb-1.5" style={{ fontWeight: 600 }}>Prerequisites</h3>
+                    <div className="flex flex-wrap gap-1.5">
+                      {syllabusSlide.prerequisites.map((p) => (
+                        <span key={p} className="text-xs px-2.5 py-1 bg-slate-100 text-slate-600 rounded-full border border-slate-200">
+                          {p}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Syllabus content */}
+                <div>
+                  <h3 className="text-sm text-slate-700 mb-2 flex items-center gap-1.5" style={{ fontWeight: 600 }}>
+                    <FileText className="w-4 h-4 text-indigo-500" />
+                    Syllabus
+                  </h3>
+                  {syllabusSlide.syllabus && syllabusSlide.syllabus.trim() ? (
+                    <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
+                      <pre className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap font-sans">
+                        {syllabusSlide.syllabus}
+                      </pre>
+                    </div>
+                  ) : (
+                    <div className="bg-slate-50 border border-slate-200 border-dashed rounded-xl p-8 text-center">
+                      <FileText className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                      <p className="text-slate-400 text-sm">No syllabus has been added for this course yet.</p>
+                      <p className="text-slate-300 text-xs mt-1">Check back later or contact your instructor.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Slide Footer */}
+              <div className="p-4 border-t border-slate-100 bg-slate-50">
+                <button
+                  onClick={() => setSyllabusSlide(null)}
+                  className="w-full py-2.5 text-sm text-slate-600 border border-slate-200 rounded-xl hover:bg-white transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </>
+          );
+        })()}
+      </div>
     </div>
   );
 }

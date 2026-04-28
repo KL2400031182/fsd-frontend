@@ -16,6 +16,7 @@ export interface Course {
   };
   semester: string;
   prerequisites: string[];
+  syllabus?: string;
 }
 
 export interface Student {

@@ -21,6 +21,7 @@ const emptyCourse: Omit<Course, 'id'> = {
   schedule: { days: ['Mon', 'Wed', 'Fri'], startTime: '09:00', endTime: '10:00', room: '' },
   semester: 'Spring 2026',
   prerequisites: [],
+  syllabus: '',
 };
 
 export function ManageCourses() {
@@ -321,11 +322,10 @@ export function ManageCourses() {
                     key={day}
                     type="button"
                     onClick={() => toggleDay(day)}
-                    className={`flex-1 py-1.5 text-sm rounded-lg border transition-colors ${
-                      form.schedule.days.includes(day)
+                    className={`flex-1 py-1.5 text-sm rounded-lg border transition-colors ${form.schedule.days.includes(day)
                         ? 'bg-emerald-600 border-emerald-600 text-white'
                         : 'border-slate-200 text-slate-500 hover:border-slate-300'
-                    }`}
+                      }`}
                   >
                     {day}
                   </button>
@@ -376,6 +376,19 @@ export function ManageCourses() {
                 onChange={(e) => setPrereqInput(e.target.value)}
                 placeholder="e.g. CS101, MATH101"
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="text-sm text-slate-600 block mb-1 flex items-center gap-1.5">
+                <BookOpen className="w-3.5 h-3.5 text-emerald-600" />
+                Syllabus
+              </label>
+              <textarea
+                value={form.syllabus ?? ''}
+                onChange={(e) => setForm({ ...form, syllabus: e.target.value })}
+                placeholder="Enter the course syllabus — topics covered, weekly plan, grading policy, required textbooks, etc."
+                rows={6}
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300 resize-y"
               />
             </div>
           </div>
