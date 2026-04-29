@@ -80,7 +80,11 @@ function uid() { return String(++nextId); }
 async function canReachBackend(): Promise<boolean> {
   try {
     const res = await fetch('/api/courses', { signal: AbortSignal.timeout(2500) });
-    return res.ok || res.status < 500;
+    // Vercel's rewrite returns 200 with HTML for unknown routes.
+    // Only consider backend alive if response is actual JSON.
+    const contentType = res.headers.get('content-type') ?? '';
+    if (!contentType.includes('application/json')) return false;
+    return res.ok;
   } catch {
     return false;
   }
